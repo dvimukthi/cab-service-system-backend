@@ -1,5 +1,5 @@
-class vehicle {
-    constructor(id, name, type, numberPlate, seats, price, branch_id) {
+class Vehicle {
+    constructor(id, name, type, numberPlate, seats, price, branchId) {
         this.id = id;
         this.name = name;
         this.type = type;
@@ -12,7 +12,9 @@ class vehicle {
     getId() {
         return this.id;
     }
-
+    setId(id) {
+        this.id = id;
+    }
     getName() {
         return this.name;
     }
@@ -50,6 +52,8 @@ class vehicle {
         this.price = price;
     }
     getBranchId() {
-        return this.brancId;
+        return this.branchId;
     }
 }
+
+module.exports = Vehicle;

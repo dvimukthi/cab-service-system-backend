@@ -31,3 +31,5 @@ class Credentials {
     }
 
 }
+
+module.exports = Credentials;

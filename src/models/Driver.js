@@ -1,10 +1,11 @@
 let User = require('./User');
 
 class Driver extends User {
-    constructor(id, userId, userType, firstName, lastName, address, email, phoneNumber, status) {
+    constructor(id, userId, userType, firstName, lastName, address, email, phoneNumber, status, branch) {
         super(userId,userType, firstName, lastName, address, email, phoneNumber);
         this.id = id;
         this.status = status;
+        this.branch = branch;
     }
 
     getId() {
@@ -19,4 +20,14 @@ class Driver extends User {
         this.status = status;
     }
 
+    getBranch() {
+        return this.branch;
+    }
+
+    setBranch(branch) {
+        this.branch = branch;
+    }
+
 }
+
+module.exports = Driver;

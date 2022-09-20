@@ -1,5 +1,6 @@
-class Trips {
-    constructor(id, pickupStreet, pickupCity, dropStreet, dropCity, driverId, vehicleId, customerId, confirmed) {
+class Trip {
+    constructor(id, pickupStreet, pickupCity, dropStreet, dropCity, driverId, 
+        vehicleId, customerId, confirmed, customerName, distance=0, branch=1, cost=0.00) {
         this.id = id;
         this.pickupStreet = pickupStreet;
         this.pickupCity = pickupCity;
@@ -9,6 +10,10 @@ class Trips {
         this.vehicleId = vehicleId;
         this.customerId = customerId;
         this.confirmed = confirmed;
+        this.customerName = customerName;
+        this.distance  = distance;
+        this.branch = branch;
+        this.cost = cost;
     }
 
     getId(){
@@ -24,7 +29,7 @@ class Trips {
     }
 
     getPickupCity() {
-        this.pickupCity;
+        return this.pickupCity;
     }
 
     setPickupCity(pickupCity) {
@@ -42,7 +47,7 @@ class Trips {
 
 
     getDropCity() {
-        this.dropCity;
+        return this.dropCity;
     }
 
     getConfirmedStatus() {
@@ -79,4 +84,39 @@ class Trips {
         return this.customerId = customerId;
     }
 
+    getCustomerName() {
+        return this.customerName;
+    }
+
+    setCustomerName(customerName) {
+        this.customerName = customerName;
+    }
+
+    getDistance(){
+        return this.distance;
+    }
+
+    setDistance(distance) {
+        this.distance = distance;
+    }
+
+    
+    getBranch(){
+        return this.branch;
+    }
+
+    setBranch(branch) {
+        this.branch = branch;
+    }
+
+    getCost() {
+        return this.cost;
+    }
+
+    setCost(cost) {
+        this.cost = cost;
+    }
+
 }
+
+module.exports=Trip;
