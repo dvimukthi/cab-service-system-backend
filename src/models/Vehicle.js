@@ -1,5 +1,5 @@
 class Vehicle {
-    constructor(id, name, type, numberPlate, seats, price, branchId) {
+    constructor(id, name, type, numberPlate, seats, price, branchId, branch = null) {
         this.id = id;
         this.name = name;
         this.type = type;
@@ -7,6 +7,7 @@ class Vehicle {
         this.seats = seats;
         this.price = price;
         this.branchId = branchId;
+        this.branch = branch;
     }
 
     getId() {
@@ -53,6 +54,14 @@ class Vehicle {
     }
     getBranchId() {
         return this.branchId;
+    }
+
+    setBranch(branch) {
+        this.branch = branch;
+    }
+
+    getBranch() {
+        return this.branch;
     }
 }
 

@@ -425,10 +425,9 @@ function signIn(username, password) {
                             WHERE trim(username) = '${username}'
                             AND   trim(password) = '${password}')`;
 
-    console.log(SQL);
+    // console.log()
     conn.query(SQL, function (err, r) {
       if (err) console.log(err);
-      console.log(r);
       var user = new User(
         r[0].id,
         r[0].user_type,
@@ -760,12 +759,32 @@ async function createVehicle(vehicle) {
   });
 }
 
-function getVehicles() {
+async function deleteVehicle(id) {
   return new Promise((resolve) => {
-    var SQL = ` SELECT id,vehicle_name, vehicle_type, number_plate, number_of_seats, price, branch_id FROM go_cheeta.vehicle ;`;
+    conn.beginTransaction((err) => {
+      if (err) resolve(null);
+      getVehicleById(id).then((vehicle) => {
+        var SQL = `DELETE FROM   go_cheeta.vehicle WHERE id = ${id}`;
+        conn.query(SQL, function (err, result) {
+          if (err) {
+            console.log(err);
+            resolve(null);
+          }
+          resolve(id);
+        });
+      });
+    });
+  });
+}
+
+async function getVehicles() {
+  return new Promise((resolve) => {
+    var SQL = `SELECT id,vehicle_name, vehicle_type, number_plate, 
+        number_of_seats, price, branch_id 
+        FROM go_cheeta.vehicle order by vehicle_type;`;
     var vehicles = [];
-    conn.query(SQL, function (err, rows) {
-      rows.forEach((r) => {
+    conn.query(SQL, async function (err, rows) {
+      for (const r of rows) {
         var vehicle = new Vehicle(
           r.id,
           r.vehicle_name,
@@ -776,8 +795,13 @@ function getVehicles() {
           r.branch_id
         );
 
+        if (r.branch_id) {
+          const branch = await getBranchById(r.branch_id);
+          vehicle.setBranch(branch.getLocation());
+        }
+
         vehicles.push(vehicle);
-      });
+      }
       resolve(vehicles);
     });
   });
@@ -832,8 +856,6 @@ function getVehicleByTypeAndBranch(type, branchId) {
   return new Promise((resolve) => {
     var SQL = ` SELECT id,vehicle_name, number_plate, number_of_seats, price, branch_id 
         FROM go_cheeta.vehicle where vehicle_type = '${type}' AND branch_id=${branchId};`;
-
-    console.log(SQL);
     conn.query(SQL, function (err, rows) {
       if (rows.length == 0) {
         resolve(null);
@@ -849,6 +871,57 @@ function getVehicleByTypeAndBranch(type, branchId) {
         );
       }
       resolve(vehicle);
+    });
+  });
+}
+
+function updateVehicle(vehicle, id) {
+  return new Promise((resolve) => {
+    getVehicleById(id).then((db) => {
+      var dbVehicle = db[0];
+      conn.beginTransaction((err) => {
+        if (err) resolve(null);
+        var SQL = `UPDATE  go_cheeta.vehicle SET 
+                                    vehicle_name = '${
+                                      vehicle.getName()
+                                        ? vehicle.getName()
+                                        : dbVehicle.getName()
+                                    }',
+                                    vehicle_type = '${
+                                      vehicle.getType()
+                                        ? vehicle.getType()
+                                        : dbVehicle.getType()
+                                    }',
+                                    number_plate = '${
+                                      vehicle.getNumberPlate()
+                                        ? vehicle.getNumberPlate()
+                                        : dbVehicle.getNumberPlate()
+                                    }',
+                                    number_of_seats = ${
+                                      vehicle.getSeats()
+                                        ? vehicle.getSeats()
+                                        : dbVehicle.getSeats()
+                                    },
+                                    price = ${
+                                      vehicle.getPrice()
+                                        ? vehicle.getPrice()
+                                        : dbVehicle.getPrice()
+                                    },
+                                    branch_id = ${
+                                      vehicle.getBranchId()
+                                        ? vehicle.getBranchId()
+                                        : dbVehicle.getBranchId()
+                                    }
+                                    WHERE id = ${id}`;
+        conn.query(SQL, function (err, result) {
+          if (err) {
+            console.log(err);
+            resolve(null);
+          }
+          conn.commit();
+          resolve();
+        });
+      });
     });
   });
 }
@@ -879,8 +952,10 @@ module.exports = {
   createUser,
   updateUser,
   createVehicle,
+  deleteVehicle,
   getVehicles,
   getVehicleById,
   getVehiclesByNumberPlate,
   getVehicleByTypeAndBranch,
+  updateVehicle,
 };

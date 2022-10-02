@@ -26,9 +26,11 @@ const {
     getUsers,
     getUserById,
     createVehicle,
+    deleteVehicle,
     getVehicles,
     getVehiclesByNumberPlate,
     getVehicleByTypeAndBranch,
+    updateVehicle,
    } = require('./src/services/data_service');
 
 const Customer = require('./src/models/Customer');
@@ -243,7 +245,6 @@ app.post("/driver", async function (req, res) {
       const branchName = body.branch;
       const vehicle = await getVehiclesByNumberPlate(numberPlate);
       const branch = await getBranchByName(branchName);
-
       var driver = new Driver(
         id,
         null,
@@ -258,6 +259,7 @@ app.post("/driver", async function (req, res) {
         vehicle.getId(),     
       );
 
+      console.log(driver);
       const _driver = await updateDriver(driver, id);
       res.send(JSON.stringify(_driver));
     } catch (err) {
@@ -410,7 +412,7 @@ app.get('/vehicle/:id', async function (req, res) {
     }
 });
 
-app.post('/vehicles', async function (req, res) {
+app.post('/vehicle', async function (req, res) {
     try{
         var body = req.body;
         if(!body){
@@ -418,8 +420,14 @@ app.post('/vehicles', async function (req, res) {
             return;
         }
         
+        console.log(body);
+
+        const branchName = body.branch;
+        const branch = await getBranchByName(branchName);
+
         var vehicle = new Vehicle(null,body.name, body.type, 
-            body.number_plate, body.seats, body.price, body.branch_id);
+            body.numberPlate, body.seats, body.price, branch.getId());
+        console.log(vehicle);
 
         const _vehicle = await createVehicle(vehicle);
         res.status(201).send(JSON.stringify(_vehicle));
@@ -428,6 +436,43 @@ app.post('/vehicles', async function (req, res) {
         res.status(500).send(JSON.stringify(err.message));
     }
 });
+
+app.put("/vehicle/:id", async function (req, res) {
+    try {
+      var id = req.params.id;
+      var body = req.body;
+      if (!body) {
+        res.sendStatus(400);
+        return;
+      }
+  
+      
+      const branchName = body.branch;
+      const branch = await getBranchByName(branchName);
+      var vehicle = new Vehicle(null,body.name, body.type, 
+        body.numberPlate, body.seats, body.price, branch.getId());
+        console.log(vehicle);
+
+      const _vehicle = await updateVehicle(vehicle, id);
+      res.send(JSON.stringify(_vehicle));
+    } catch (err) {
+      console.log(err);
+      res.status(500).send(JSON.stringify(err.message));
+    }
+  });
+  
+  app.delete("/vehicle/:id", async function (req, res) {
+    try {
+      var id = req.params.id;
+      const _id = await deleteVehicle(id);
+      res.send(JSON.stringify({ status: "Delete", id: _id }));
+    } catch (err) {
+      console.log(err);
+      res.status(500).send(JSON.stringify(err.message));
+    }
+  });
+
+
 var server = app.listen(port, hostname, () => {
   console.log(`Server Started on : http://${hostname}:${port}/`);
 });
