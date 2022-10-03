@@ -17,10 +17,112 @@ conn.connect(function (err) {
   if (err) throw err;
 });
 
+async function createBranch(branch) {
+  return new Promise(async (resolve) => {
+    conn.beginTransaction((err) => {
+      if (err) resolve(null);
+
+      SQL = `INSERT INTO go_cheeta.branch 
+                (location, address, email, phone) 
+                VALUES (?)`;
+
+      values = [
+        branch.getLocation(),
+        branch.getAddress(),
+        branch.getEmail(),
+        branch.getPhone(),
+      ];
+      conn.query(SQL, [values], function (err, result) {
+        if (err) {
+          console.log(err);
+          resolve(null);
+        }
+        branch.setId(result.insertId);
+        conn.commit();
+        resolve(branch);
+      });
+    });
+  });
+}
+
+async function deleteBranch(id) {
+  return new Promise((resolve) => {
+    conn.beginTransaction((err) => {
+      if (err) resolve(null);
+      getBranchById(id).then((branch) => {
+        var SQL = `DELETE FROM   go_cheeta.branch WHERE id = ${id}`;
+        conn.query(SQL, function (err, result) {
+          if (err) {
+            console.log(err);
+            resolve(null);
+          }
+          resolve(id);
+        });
+      });
+    });
+  });
+}
+
 function getBranchById(id) {
   return new Promise((resolve) => {
+    var SQL = ` SELECT id,location, address, email, phone, 
+            (SELECT count(*) FROM go_cheeta.driver WHERE  branch = branch.id) as 'drivers',
+            (SELECT count(*) FROM go_cheeta.vehicle  WHERE  branch_id = branch.id) as 'vehicles'
+            FROM go_cheeta.branch where id = '${id}';`;
+
+    conn.query(SQL, function (err, rows) {
+      if (rows.length == 0) {
+        resolve(null);
+      } else {
+        var branch = new Branch(
+          rows[0].id,
+          rows[0].location,
+          rows[0].address,
+          rows[0].email,
+          rows[0].phone,
+          rows[0].drivers,
+          rows[0].vehicles
+        );
+      }
+      resolve(branch);
+    });
+  });
+}
+
+function getBranchList() {
+  return new Promise((resolve) => {
+    var SQL = ` SELECT id,location, address, email, phone, 
+            (SELECT count(*) FROM go_cheeta.driver WHERE  branch = branch.id) as 'drivers',
+            (SELECT count(*) FROM go_cheeta.vehicle  WHERE  branch_id = branch.id) as 'vehicles'
+            FROM go_cheeta.branch;`;
+
+    conn.query(SQL, function (err, rows) {
+      var branchList = [];
+      if (rows.length == 0) {
+        resolve(null);
+      } else {
+        for (const r of rows) {
+          var branch = new Branch(
+            r.id,
+            r.location,
+            r.address,
+            r.email,
+            r.phone,
+            r.drivers,
+            r.vehicles
+          );
+          branchList.push(branch);
+        }
+      }
+      resolve(branchList);
+    });
+  });
+}
+
+function getBranchByName(location) {
+  return new Promise((resolve) => {
     var SQL = ` SELECT id,location 
-        FROM go_cheeta.branch where id = '${id}';`;
+            FROM go_cheeta.branch where location = '${location}';`;
 
     conn.query(SQL, function (err, rows) {
       if (rows.length == 0) {
@@ -33,18 +135,44 @@ function getBranchById(id) {
   });
 }
 
-function getBranchByName(location) {
-  return new Promise((resolve) => {
-    var SQL = ` SELECT id,location 
-        FROM go_cheeta.branch where location = '${location}';`;
+async function updateBranch(branch, id) {
+  return new Promise(async (resolve) => {
+    conn.beginTransaction(async (err) => {
+      if (err) resolve(null);
 
-    conn.query(SQL, function (err, rows) {
-      if (rows.length == 0) {
-        resolve(null);
-      } else {
-        var branch = new Branch(rows[0].id, rows[0].location);
-      }
-      resolve(branch);
+      var dbBranch = await getBranchById(id);
+
+      var SQL = `UPDATE  go_cheeta.branch 
+                        SET 
+                        location = '${
+                          branch.getLocation()
+                            ? branch.getLocation()
+                            : dbBranch.getLocation()
+                        }', 
+                        address = '${
+                          branch.getAddress()
+                            ? branch.getAddress()
+                            : dbBranch.getAddress()
+                        }', 
+                        email = '${
+                          branch.getEmail()
+                            ? branch.getEmail()
+                            : dbBranch.getEmail()
+                        }', 
+                        phone = '${
+                          branch.getPhone()
+                            ? branch.getPhone()
+                            : dbBranch.getPhone()
+                        }'
+                        WHERE id = ${id}`;
+      conn.query(SQL, function (err, result) {
+        if (err) {
+          console.log(err);
+          resolve(null);
+        }
+        conn.commit();
+        resolve(branch);
+      });
     });
   });
 }
@@ -927,8 +1055,12 @@ function updateVehicle(vehicle, id) {
 }
 
 module.exports = {
+  createBranch,
+  deleteBranch,
+  getBranchList,
   getBranchByName,
   getBranchById,
+  updateBranch,
   createCredentials,
   createCustomers,
   deleteCustomer,

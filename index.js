@@ -4,7 +4,12 @@ const bodyParser = require('body-parser');
 const multiparty = require('multiparty');
 
 const {
+    createBranch,
+    deleteBranch,
+    getBranchList,
+    getBranchById,
     getBranchByName,
+    updateBranch,
     createCredentials,
     createCustomers,
     deleteCustomer,
@@ -37,6 +42,7 @@ const Customer = require('./src/models/Customer');
 const Vehicle = require('./src/models/Vehicle');
 const Trip = require('./src/models/Trip');
 const Driver = require('./src/models/Driver');
+const Branch = require('./src/models/Branch');
 var app = express();
 
 app.use(bodyParser.urlencoded({extended: false}));
@@ -79,6 +85,86 @@ app.post('/signin', async function (req, res) {
     
     
 });
+
+app.post("/branch", async function (req, res) {
+    try {
+      var body = req.body;
+      if (!body) {
+        res.sendStatus(400);
+        return;
+      }
+      var branch = new Branch(
+        null,
+        body.location,
+        body.address,
+        body.email,
+        body.phone   
+      );
+      const _branch = await createBranch(branch);
+      res.status(201).send(JSON.stringify(_branch));
+    } catch (err) {
+      console.log(err);
+      res.sendStatus(500);
+    }
+  });
+  
+  app.put("/branch/:id", async function (req, res) {
+    try {
+      var id = req.params.id;
+      var body = req.body;
+      if (!body) {
+        res.sendStatus(400);
+        return;
+      }
+  
+      
+      var branch = new Branch(
+        null,
+        body.location,
+        body.address,
+        body.email,
+        body.phone   
+      );
+
+      console.log(branch);
+      const _branch = await updateBranch(branch, id);
+      res.send(JSON.stringify(_branch));
+    } catch (err) {
+      console.log(err);
+      res.status(500).send(JSON.stringify(err.message));
+    }
+  });
+  
+  app.delete("/branch/:id", async function (req, res) {
+    try {
+      var id = req.params.id;
+      const _id = await deleteBranch(id);
+      res.send(JSON.stringify({ status: "Delete", id: _id }));
+    } catch (err) {
+      console.log(err);
+      res.status(500).send(JSON.stringify(err.message));
+    }
+  });
+
+app.get('/branch', async function (req, res) {
+    try{
+        const branchs = await getBranchList();
+        res.send(JSON.stringify(branchs));
+    } catch (err){
+        res.status(500).send(JSON.stringify(err.message));
+    }
+});
+
+app.get('/branch/:id', async function (req, res) {
+    try{
+        const id = req.params.id;
+        const branchs = await getBranchById(id);
+        res.send(JSON.stringify(branchs));
+    } catch (err){
+        res.status(500).send(JSON.stringify(err.message));
+    }
+});
+
 
 app.get('/customers', async function (req, res) {
     try{
