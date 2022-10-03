@@ -207,10 +207,9 @@ async function createCustomers(customer) {
     );
 
     var mUser = await createUser(user);
+    console.log(mUser);
     conn.beginTransaction((err) => {
       if (err) resolve(null);
-
-      customer.setUserId(mUser.getId());
 
       SQL = `INSERT INTO go_cheeta.customer (trip_count, user_id) VALUES (?)`;
 
@@ -220,7 +219,11 @@ async function createCustomers(customer) {
           console.log(err);
           resolve(null);
         }
+
+        customer.setUserId(mUser.getId());
         customer.setId(result.insertId);
+
+        // console.log(customer, customer.getUserId(), mUser.getId());
         conn.commit();
         resolve(customer);
       });
@@ -339,6 +342,34 @@ function getCustomersById(id) {
     });
   });
 }
+
+function getCustomerByUserId(userId) {
+  return new Promise((resolve) => {
+    var SQL = ` SELECT first_name, last_name, address, email, phone_number, customer.id as "ID", trip_count FROM go_cheeta.user 
+        INNER JOIN
+        customer WHERE customer.user_id = ${userId};`;
+    console.log(SQL);
+    conn.query(SQL, function (err, rows) {
+      if (rows.length == 0) {
+        resolve(null);
+      } else {
+        var customer = new Customer(
+          rows[0].ID,
+          null,
+          null,
+          rows[0].first_name,
+          rows[0].last_name,
+          rows[0].address,
+          rows[0].email,
+          rows[0].phone_number,
+          rows[0].trip_count
+        );
+        resolve(customer);
+      }
+    });
+  });
+}
+
 // for driver CRUD
 async function createDriver(driver) {
   return new Promise(async (resolve) => {
@@ -518,6 +549,48 @@ function getDriverById(id) {
   });
 }
 
+function getDriverByVehicleId(id) {
+  return new Promise((resolve) => {
+    var SQL = ` SELECT user.id as "userId" , first_name, last_name, address, email, phone_number, driver.id as "ID", 
+        status, driver.branch, driver.vehicle_id FROM go_cheeta.user 
+        INNER JOIN
+        driver WHERE driver.user_id = user.id
+        AND driver.vehicle_id = ${id};`;
+
+    console.log(SQL);
+    var drivers = [];
+    conn.query(SQL, async function (err, rows) {
+      for (const r of rows) {
+        var driver = new Driver(
+          r.ID,
+          r.userId,
+          null,
+          r.first_name,
+          r.last_name,
+          r.address,
+          r.email,
+          r.phone_number,
+          r.status,
+          r.branch,
+          r.vehicle_id
+        );
+
+        if (r.vehicle_id) {
+          const vehicle = await getVehicleById(r.vehicle_id);
+          driver.setVehicle(vehicle);
+        }
+
+        if (r.branch) {
+          const branch = await getBranchById(r.branch);
+          driver.setBranch(branch.getLocation());
+        }
+        drivers.push(driver);
+      }
+      resolve(drivers);
+    });
+  });
+}
+
 function getDriverByUserId(id) {
   return new Promise((resolve) => {
     var SQL = ` SELECT first_name, last_name, address, email, phone_number, driver.id as "ID", driver.status, (select location from branch where id = driver.branch) as "branch" FROM go_cheeta.user 
@@ -553,7 +626,7 @@ function signIn(username, password) {
                             WHERE trim(username) = '${username}'
                             AND   trim(password) = '${password}')`;
 
-    // console.log()
+    console.log(SQL);
     conn.query(SQL, function (err, r) {
       if (err) console.log(err);
       var user = new User(
@@ -609,7 +682,7 @@ async function createTrip(trip) {
         trip.getDropStreet(),
         trip.getDropCity(),
         trip.getConfirmedStatus(),
-        null,
+        trip.getDriverId(),
         trip.getVehicleId(),
         trip.getCustomerId(),
         trip.getBranch(),
@@ -793,8 +866,10 @@ async function createUser(user) {
           resolve(null);
         }
         conn.commit();
+        console.log("XXXX", result.insertId);
         getUserById(result.insertId)
           .then((dbUser) => {
+            console.log("XXXX", dbUser);
             resolve(dbUser);
           })
           .catch((err) => {
@@ -1110,10 +1185,12 @@ module.exports = {
   deleteCustomer,
   getCustomers,
   getCustomersById,
+  getCustomerByUserId,
   updateCustomer,
   createDriver,
   deleteDriver,
   getDrivers,
+  getDriverByVehicleId,
   getDriverById,
   getDriverByUserId,
   updateDriver,
