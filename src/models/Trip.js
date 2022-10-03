@@ -1,6 +1,7 @@
 class Trip {
     constructor(id, pickupStreet, pickupCity, dropStreet, dropCity, driverId, 
-        vehicleId, customerId, confirmed, customerName, distance=0, branch=1, cost=0.00) {
+        vehicleId, customerId, confirmed, customerName, distance=0, branch=1, cost=0.00, 
+        vehicle=null, driver=null) {
         this.id = id;
         this.pickupStreet = pickupStreet;
         this.pickupCity = pickupCity;
@@ -14,6 +15,8 @@ class Trip {
         this.distance  = distance;
         this.branch = branch;
         this.cost = cost;
+        this.vehicle = vehicle;
+        this.driver = driver;
     }
 
     getId(){
@@ -115,6 +118,22 @@ class Trip {
 
     setCost(cost) {
         this.cost = cost;
+    }
+
+    getDriver() {
+        return this.driver;
+    }
+
+    setDriver(driver) {
+        this.driver = driver;
+    }
+
+    getVehicle() {
+        return this.vehicle;
+    }
+
+    setVehicle(vehicle) {
+        this.vehicle = vehicle;
     }
 
 }

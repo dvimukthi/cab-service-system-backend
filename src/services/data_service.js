@@ -686,6 +686,48 @@ function getTripById(id) {
     });
   });
 }
+async function getTripsByCustomerId(id) {
+  return new Promise((resolve) => {
+    var SQL = `SELECT id,pickup_street,pickup_city,drop_street,drop_city,confirmed,driver_id,vehicle_id,
+        (SELECT CONCAT(first_name,' ',last_name) FROM go_cheeta.user WHERE id IN (
+            SELECT user_id from go_cheeta.customer WHERE id = customer_id
+        )) as "customer_name",customer_id, branch_id, distance, cost
+        FROM go_cheeta.trip WHERE driver_id in (SELECT id from go_cheeta.customer WHERE id = '${id}')`;
+    var trips = [];
+    console.log(SQL);
+    conn.query(SQL, async function (err, rows) {
+      if (err) resolve(null);
+      for (const r of rows) {
+        var branch = await getBranchById(r.branch_id);
+        console.log(branch);
+        var trip = new Trip(
+          r.id,
+          r.pickup_street,
+          r.pickup_city,
+          r.drop_street,
+          r.drop_city,
+          r.driver_id,
+          r.vehicle_id,
+          r.customer_id,
+          r.confirmed,
+          r.customer_name,
+          r.distance,
+          branch ? branch.getLocation() : "",
+          r.cost
+        );
+
+        var vehicle = await getVehicleById(r.vehicle_id);
+        trip.setVehicle(vehicle);
+        var driver = await getDriverById(r.driver_id);
+        trip.setDriver(driver[0]);
+        console.log(trip);
+        trips.push(trip);
+      }
+      console.log(trips);
+      resolve(trips);
+    });
+  });
+}
 
 async function getTripsByDriverId(id) {
   return new Promise((resolve) => {
@@ -1078,6 +1120,7 @@ module.exports = {
   createTrip,
   getTrips,
   getTripById,
+  getTripsByCustomerId,
   getTripsByDriverId,
   getUsers,
   getUserById,

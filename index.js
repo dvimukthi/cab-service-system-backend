@@ -28,6 +28,7 @@ const {
     getTrips,
     getTripById,
     getTripsByDriverId,
+    getTripsByCustomerId,
     getUsers,
     getUserById,
     createVehicle,
@@ -183,6 +184,19 @@ app.get('/customer/:id', async function (req, res) {
             res.sendStatus(404);
         else 
             res.send(JSON.stringify(customer));
+    } catch (err){
+        res.status(500).send(JSON.stringify(err.message));
+    }
+});
+
+app.get('/customer/:id/trips', async function (req, res) {
+    try{
+        const id = req.params.id;
+        const customerTrips = await getTripsByCustomerId(id);
+        if(!customerTrips)
+            res.sendStatus(404);
+        else 
+            res.send(JSON.stringify(customerTrips));
     } catch (err){
         res.status(500).send(JSON.stringify(err.message));
     }
