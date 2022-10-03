@@ -445,8 +445,10 @@ app.post('/trip', async function (req, res) {
         console.log(body);
         var vehicle_type = body.mini ? 'Mini': body.car ? 'Car' : 'Van';
         var branch = await getBranchByName(body.branch);
+        console.log(branch);
         var vehicle = await getVehicleByTypeAndBranch(vehicle_type, branch.id);
-        console.log(vehicle);
+        var cost = Number(body.distance?body.distance:0) * Number(vehicle.getPrice()? vehicle.getPrice() : 0);
+        
         var trip = new Trip(
             null,
             body.pickup_street,
@@ -457,9 +459,12 @@ app.post('/trip', async function (req, res) {
             vehicle.id,
             body.customer_id,
             false,
+            '',
             body.distance,
             branch.id,
+            cost,
         );
+        console.log(trip);
         const trip_id = await createTrip(trip);
         res.status(201).send(JSON.stringify({"status":"SUCCESS", "trip_id":trip_id}));
     }catch (err) {
